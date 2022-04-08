@@ -4,7 +4,9 @@ let _db;
 
 const mongoConnect = (callback) => {
   mongoose.connect(process.env.MONGO_URI, {
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+    useFindAndModify: false
   })
     .then((client) => {
       console.log("Connected!");
