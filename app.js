@@ -5,8 +5,12 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const multer = require("multer");
-const { init: initSocketIO } = require('./socketIO.js');
+const { init: initSocketIO } = require("./socketIO.js");
+const { graphqlHTTP } = require("express-graphql");
 
+const auth = require('./middleware/auth.js');
+const graphqlSchema = require("./graphql/schema.js");
+const graphqlResolver = require("./graphql/resolvers.js");
 const feedRoutes = require("./routes/feed");
 const authRoutes = require("./routes/auth");
 const { mongoConnect } = require("./util/database.js");
@@ -50,26 +54,51 @@ app.use((req, res, next) => {
     "OPTIONS, GET, POST, PUT, PATCH, DELETE"
   );
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
   next();
 });
 
 app.use("/feed", feedRoutes);
 app.use("/auth", authRoutes);
 
+app.use(auth);
+
+app.use(
+  "/graphql",
+  graphqlHTTP({
+    schema: graphqlSchema,
+    rootValue: graphqlResolver,
+    graphiql: true,
+    formatError(err) {
+      if (!err.originalError) {
+        return err;
+      }
+
+      const data = err.originalError.data;
+      const message = err.message || 'An Error Occured';
+      const code = err.originalError.code || 500
+      return {message: message, status: code, data: data }
+    }
+  }),
+  
+);
+
 app.use((error, req, res, next) => {
   if (error) {
-  console.log(error);
-  const status = error.statusCode || 500;
-  const message = error.message;
-  const data = error.data;
-  res.status(status).json({ message: message, data: data });
+    console.log(error);
+    const status = error.statusCode || 500;
+    const message = error.message;
+    const data = error.data;
+    res.status(status).json({ message: message, data: data });
   }
 });
 
 mongoConnect(() => {
   const server = app.listen(8080);
   const socketIO = initSocketIO(server);
-  socketIO.on('connection', (socket) => {
+  socketIO.on("connection", (socket) => {
     console.log("Client Connected");
   });
 });
