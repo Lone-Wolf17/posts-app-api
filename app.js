@@ -1,12 +1,16 @@
+const fs = require('fs');
 const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const multer = require("multer");
+const helmet = require('helemt');
+const compression = require('compression');
+const morgan = require('morgan');
+
 const { init: initSocketIO } = require("./socketIO.js");
 const { graphqlHTTP } = require("express-graphql");
-
 const { clearImage } = require("./util/file.js");
 const auth = require("./middleware/auth.js");
 const graphqlSchema = require("./graphql/schema.js");
@@ -18,6 +22,8 @@ const { mongoConnect } = require("./util/database.js");
 dotenv.config({ path: "./config.env" }); // Load Config
 
 const app = express();
+
+app.use(helmet());
 
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -39,6 +45,14 @@ const fileFilter = (req, file, cb) => {
     cb(null, false);
   }
 };
+
+const accessLogStream = fs.fs.createWriteStream(
+  path.join(__dirname, 'access.log'), {flags: 'a'}
+);
+
+app.use(helmet());
+app.use(compression());
+app.morgan('combined', {stream: accessLogStream});
 
 // app.use(bodyParser.urlencoded()); // x-www-form-urlencoded <form>
 app.use(bodyParser.json()); // application/json
