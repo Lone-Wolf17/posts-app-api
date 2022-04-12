@@ -2,18 +2,18 @@ const chai = require("chai");
 const chaiAsPromised = require("chai-as-promised");
 const sinon = require("sinon");
 const mongoose = require("mongoose");
+const dotenv = require("dotenv");
 
 const AuthController = require("../controllers/auth.js");
 const User = require("../models/user.js");
 
 chai.use(chaiAsPromised);
+dotenv.config({ path: "./config.env" }); // Load Config
 
 describe("Auth Controller", function (done) {
   before(function (done) {
     mongoose
-      .connect(
-        "mongodb+srv://wolf234:wolf432@cluster0.uube4.mongodb.net/test-messages?retryWrites=true&w=majority"
-      )
+      .connect(process.env.MONGO_TEST_URI)
       .then((client) => {
         console.log("DB Connected!");
         const user = new User({
@@ -29,7 +29,7 @@ describe("Auth Controller", function (done) {
         done();
       });
   });
-  
+
   it("should throw an error with code 500 if accessing the database fails", function (done) {
     sinon.stub(User, "findOne");
     User.findOne.throws();
@@ -74,14 +74,15 @@ describe("Auth Controller", function (done) {
       chai.expect(res.userStatus).to.be.equal("I am new!");
       done();
     });
-    });
-    after(function (done) {
-        User.deleteMany({})
-          .then(() => {
-            return mongoose.disconnect();
-          })
-          .then(() => {
-            done();
-          });
+  });
+  
+  after(function (done) {
+    User.deleteMany({})
+      .then(() => {
+        return mongoose.disconnect();
+      })
+      .then(() => {
+        done();
+      });
   });
 });

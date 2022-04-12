@@ -8,9 +8,7 @@ const Post = require("../models/post.js");
 describe("Feed Controller", function (done) {
   before(function (done) {
     mongoose
-      .connect(
-        "mongodb+srv://wolf234:wolf432@cluster0.uube4.mongodb.net/test-messages?retryWrites=true&w=majority"
-      )
+      .connect(process.env.MONGO_TEST_URI)
       .then((client) => {
         console.log("DB Connected!");
         const user = new User({
@@ -41,11 +39,11 @@ describe("Feed Controller", function (done) {
     const res = {
       status: function () {},
       json: function () {
-          return this;
+        return this;
       },
     };
     FeedController.createPost(req, res, () => {}).then((savedUser) => {
-      expect(savedUser).to.be.property('posts');
+      expect(savedUser).to.be.property("posts");
       expect(savedUser).to.be.length(1);
       done();
     });
