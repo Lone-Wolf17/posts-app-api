@@ -1,23 +1,26 @@
-const fs = require('fs');
-const path = require("path");
-const express = require("express");
-const bodyParser = require("body-parser");
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-const multer = require("multer");
-const helmet = require('helemt');
-const compression = require('compression');
-const morgan = require('morgan');
+import fs from 'fs';
+import path from 'path';
+import express, { NextFunction, Response } from 'express';
+import dotenv from 'dotenv';
+import multer from 'multer';
+import helmet from 'helmet';
+import compression from 'compression';
+import morgan from 'morgan';
+import {graphqlHTTP} from 'express-graphql';
 
-const { init: initSocketIO } = require("./socketIO.js");
-const { graphqlHTTP } = require("express-graphql");
-const { clearImage } = require("./util/file.js");
-const auth = require("./middleware/is-auth.js");
-const graphqlSchema = require("./graphql/schema.js");
-const graphqlResolver = require("./graphql/resolvers.js");
-const feedRoutes = require("./routes/feed");
-const authRoutes = require("./routes/auth");
-const { mongoConnect } = require("./util/database.js");
+import {init as initSocketIO} from './socketIO';
+import {clearImage} from './util/file';
+import auth from './middleware/is-auth';
+import {errorHandler} from './middleware/error.middleware';
+import {notFoundHandler} from './middleware/not-found.middleware';
+import { RequestWithAuthData } from './models/auth_request';
+import {mongoConnect} from './util/database';
+import graphqlSchema from './graphql/schema';
+import graphqlResolver from './graphql/resolvers';
+import feedRoutes from './routes/feed';
+import authRoutes from './routes/auth';
+import HttpException from './models/http-exception';
+
 
 dotenv.config({ path: "./config.env" }); // Load Config
 
@@ -34,7 +37,7 @@ const fileStorage = multer.diskStorage({
   },
 });
 
-const fileFilter = (req, file, cb) => {
+const fileFilter = (req: RequestWithAuthData , file : Express.Multer.File, cb: multer.FileFilterCallback) => {
   if (
     file.mimetype === "image/png" ||
     file.mimetype === "image/jpg" ||
@@ -46,16 +49,16 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const accessLogStream = fs.fs.createWriteStream(
+const accessLogStream = fs.createWriteStream(
   path.join(__dirname, 'access.log'), {flags: 'a'}
 );
 
 app.use(helmet());
 app.use(compression());
-app.morgan('combined', {stream: accessLogStream});
+app.use(morgan('combined', {stream: accessLogStream}));
 
-// app.use(bodyParser.urlencoded()); // x-www-form-urlencoded <form>
-app.use(bodyParser.json()); // application/json
+
+app.use(express.json()); // application/json
 app.use(
   multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
 );
@@ -78,9 +81,9 @@ app.use("/feed", feedRoutes);
 app.use("/auth", authRoutes);
 
 app.use(auth);
-app.put("/post-image", (req, res, next) => {
+app.put("/post-image", (req: RequestWithAuthData, res: Response, next: NextFunction) => {
   if (!req.isAuth) {
-    throw new Error("Not Authenticated");
+    throw new HttpException(401, "Not Authenticated");
   }
 
   if (!req.file) {
@@ -106,23 +109,19 @@ app.use(
         return err;
       }
 
-      const data = err.originalError.data;
+      const originalError = err.originalError as HttpException;
+
+      const data = originalError.data;
       const message = err.message || "An Error Occured";
-      const code = err.originalError.code || 500;
+      const code = originalError.statusCode || 500;
       return { message: message, status: code, data: data };
     },
   })
 );
 
-app.use((error, req, res, next) => {
-  if (error) {
-    console.log(error);
-    const status = error.statusCode || 500;
-    const message = error.message;
-    const data = error.data;
-    res.status(status).json({ message: message, data: data });
-  }
-});
+// error handlers
+app.use(errorHandler);
+app.use(notFoundHandler);
 
 mongoConnect(() => {
   const server = app.listen(8080);
