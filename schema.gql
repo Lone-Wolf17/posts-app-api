@@ -12,17 +12,19 @@ type Mutation {
   createPost(postInput: PostInput!): Post!
   createUser(userInput: UserInput!): User!
   deletePost(id: String!): Boolean!
-  updatePost(id: String!, postInput: PostInput!): Post!
+  updatePost(id: ID!, postInput: PostInput!): Post!
   updateStatus(status: String!): User!
 }
 
 """The Post model"""
 type Post {
   content: String!
-  creator: String!
+  createdAt: String!
+  creator: User!
   id: ID!
   imageUrl: String!
   title: String!
+  updatedAt: String!
 }
 
 type PostData {
@@ -38,9 +40,9 @@ input PostInput {
 
 type Query {
   login(email: String!, password: String!): AuthData!
-  post(id: String!): Post!
-  posts(page: Float!): PostData!
-  user(id: String!): User!
+  post(id: ID!): Post!
+  posts(page: Int): PostData!
+  user: User!
 }
 
 """The User model"""

@@ -1,4 +1,4 @@
-import { Resolver, Mutation, Arg, Query, Ctx } from "type-graphql";
+import { Resolver, Mutation, Arg, Query, Ctx, Int, ID } from "type-graphql";
 import validator from "validator";
 
 import HttpException from "../../models/http-exception";
@@ -13,7 +13,7 @@ import { CustomResolverContext } from "../types/types";
 export class PostResolver {
   @Query((_returns) => Post, { nullable: false })
   async post(
-    @Arg("id") id: string,
+    @Arg("id", (type) => ID) id: string,
     @Ctx() context: CustomResolverContext
   ): Promise<Post> {
     if (!context.isAuth) {
@@ -35,7 +35,7 @@ export class PostResolver {
 
   @Query((_returns) => PostData)
   async posts(
-    @Arg("page") page: number,
+    @Arg("page", (type) => Int, { nullable: true }) page: number,
     @Ctx() context: CustomResolverContext
   ): Promise<PostData> {
     if (!context.isAuth) {
@@ -58,7 +58,7 @@ export class PostResolver {
       posts: posts.map((p) => {
         return {
           ...p._doc,
-          _id: p._id.toString(),
+          id: p._id.toString(),
           createdAt: p.createdAt.toISOString(),
           updatedAt: p.updatedAt.toISOString(),
         };
@@ -120,7 +120,7 @@ export class PostResolver {
 
   @Mutation(() => Post)
   async updatePost(
-    @Arg("id") id: string,
+    @Arg("id", (type) => ID) id: string,
     @Arg("postInput") postInput: PostInput,
     @Ctx() context: CustomResolverContext
   ): Promise<Post> {
@@ -163,7 +163,7 @@ export class PostResolver {
     const updatedPost = await post.save();
     return {
       ...updatedPost._doc,
-      _id: updatedPost._id.toString(),
+      id: updatedPost._id.toString(),
       createdAt: updatedPost.createdAt.toISOString(),
       updatedAt: updatedPost.updatedAt.toISOString(),
     };

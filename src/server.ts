@@ -29,7 +29,14 @@ dotenv.config({ path: "./config.env" }); // Load Config
 
 const main = async () => {
   const app = express();
-  app.use(helmet());
+  // app.use(
+  //   helmet({
+  //     contentSecurityPolicy:
+  //       process.env.NODE_ENV === "production" ? undefined : false,
+  //     crossOriginEmbedderPolicy:
+  //       process.env.NODE_ENV === "production" ? undefined : false,
+  //   })
+  // );
 
   const fileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -61,7 +68,6 @@ const main = async () => {
     { flags: "a" }
   );
 
-  app.use(helmet());
   app.use(compression());
   app.use(morgan("combined", { stream: accessLogStream }));
 
@@ -69,7 +75,7 @@ const main = async () => {
   app.use(
     multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
   );
-  app.use("/images", express.static(path.join(__dirname, "images")));
+  app.use("/images", express.static(path.join(__dirname, "..", "images")));
 
   app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -92,9 +98,12 @@ const main = async () => {
 
   /// set up GraphQL Auth middleware
   app.use("/graphql", isAuthGraphQL);
+  // set up route for GraphQl Image upload
   app.put(
     "/post-image",
+    isAuthGraphQL,
     (req: RequestWithAuthData, res: Response, next: NextFunction) => {
+      console.log(req.isAuth);
       if (!req.isAuth) {
         throw new HttpException(401, "Not Authenticated");
       }
@@ -121,10 +130,11 @@ const main = async () => {
   const apolloServer = new ApolloServer({
     schema: graphqlSchema,
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground],
-    context: (req: RequestWithAuthData): CustomResolverContext => {
+    context: ({ req }): CustomResolverContext => {
+      let request = req as RequestWithAuthData;
       return {
-        isAuth: req.isAuth || false,
-        userId: req.userId,
+        isAuth: request.isAuth || false,
+        userId: request.userId,
       };
     },
   });

@@ -13,10 +13,7 @@ import { CustomResolverContext } from "../types/types";
 @Resolver((_of) => User)
 export class UserResolver {
   @Query((_returns) => User, { nullable: false })
-  async user(
-    @Arg("id") id: string,
-    @Ctx() context: CustomResolverContext
-  ): Promise<User> {
+  async user(@Ctx() context: CustomResolverContext): Promise<User> {
     // return await UserModel.findById(id);
 
     if (!context.isAuth) {
@@ -28,10 +25,6 @@ export class UserResolver {
       const error = new HttpException(404, "No User was found");
       throw error;
     }
-    //   return {
-    //     ...user._doc,
-    //     id: user._id.toString(),
-    //   };
     return user;
   }
 
@@ -80,7 +73,7 @@ export class UserResolver {
 
     const existingUser = await UserModel.findOne({ email: userInput.email });
     if (existingUser) {
-      const error = new Error("User already Exists");
+      const error = new HttpException(403, "E-Mail address already exists!");
       throw error;
     }
     const hashedPassword = await bcrypt.hash(userInput.password, 12);

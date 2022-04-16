@@ -4,7 +4,11 @@ import HttpException from "../models/http-exception";
 import { RequestWithAuthData } from "../models/auth_request";
 import { decodeToken } from "./jwt-service.middleware";
 
-export const isAuthRestAPI = (req: RequestWithAuthData, res: Response, next: Function) => {
+export const isAuthRestAPI = (
+  req: RequestWithAuthData,
+  res: Response,
+  next: Function
+) => {
   const authHeader = req.get("Authorization");
   if (!authHeader) {
     const error = new HttpException(401, "Not Authenticated.");
@@ -27,7 +31,11 @@ export const isAuthRestAPI = (req: RequestWithAuthData, res: Response, next: Fun
   next();
 };
 
-export const isAuthGraphQL = (req: RequestWithAuthData, res: Response, next: Function) => {
+export const isAuthGraphQL = (
+  req: RequestWithAuthData,
+  res: Response,
+  next: Function
+) => {
   const authHeader = req.get("Authorization");
   if (!authHeader) {
     req.isAuth = false;

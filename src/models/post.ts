@@ -21,13 +21,16 @@ export class Post {
   @Property({ required: true })
   content!: String;
 
-  @Field((type) => String)
+  @Field((type) => User)
   @Property({ ref: User, required: true })
   creator!: Ref<User>;
 
-  _doc: any;
+  @Field((type) => String)
   createdAt: any;
+  @Field((type) => String)
   updatedAt: any;
+
+  _doc: any;
 }
 
 export const PostModel = getModelForClass(Post, {

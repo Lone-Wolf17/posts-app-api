@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run serve",
-    "serve": "node dist/server.js",
-    "test": "mocha --timeout 5000",
-    "dev": "ts-node-dev --respawn --pretty --transpile-only src/server.ts"
+    "serve": "NODE_ENV=production node dist/server.js",
+    "test": "NODE_ENV=test mocha --timeout 5000",
+    "dev": "NODE_ENV=dev ts-node-dev --respawn --pretty --transpile-only src/server.ts"
   },
   "repository": {
     "type": "git",
