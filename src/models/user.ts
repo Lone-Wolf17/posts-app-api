@@ -1,35 +1,37 @@
 import { ObjectType, Field, ID, Int } from "type-graphql";
-import { prop as Property, getModelForClass, mongoose } from "@typegoose/typegoose";
+import {
+  prop as Property,
+  getModelForClass,
+  mongoose,
+} from "@typegoose/typegoose";
 
-import {Post} from "./post";
+import { Post } from "./post";
 
-
-@ObjectType({description: 'The User model'})
+@ObjectType({ description: "The User model" })
 export class User {
-  @Field(() => ID)  
+  @Field(() => ID)
   id!: String;
 
   @Field()
-  @Property({required: true})
+  @Property({ required: true })
   email!: string;
 
   @Field()
-  @Property({required: true})
+  @Property({ required: true })
   password!: string;
 
   @Field()
-  @Property({required: true})
+  @Property({ required: true })
   name!: String;
 
   @Field()
-  @Property({default: 'I am new!'})
+  @Property({ default: "I am new!" })
   status!: String;
 
   @Field((type) => [Post])
-    @Property({type: () => Post, default: []})
-    posts!: mongoose.Types.Array<Post>;
-    _doc:any
-
+  @Property({ type: () => Post, default: [] })
+  posts!: mongoose.Types.Array<Post>;
+  _doc: any;
 }
 
 export const UserModel = getModelForClass(User);

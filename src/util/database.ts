@@ -1,13 +1,14 @@
-import mongoose from 'mongoose';
+import mongoose, { ConnectOptions } from "mongoose";
 
 // let _db;
 
-export const mongoConnect = (callback : Function) => {
-  mongoose.connect(process.env.MONGO_URI!, {
-    useUnifiedTopology: true,
-    useNewUrlParser: true,
-    useFindAndModify: false
-  })
+export const mongoConnect = (callback: Function) => {
+  mongoose
+    .connect(process.env.MONGO_URI!, {
+      useUnifiedTopology: true,
+      useNewUrlParser: true,
+      useFindAndModify: false,
+    } as ConnectOptions)
     .then((client) => {
       console.log("Connected!");
       callback();

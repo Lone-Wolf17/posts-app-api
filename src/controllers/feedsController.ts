@@ -1,22 +1,26 @@
-import fs from 'fs';
-import path from 'path';
-import { Response, NextFunction } from 'express';
-import {validationResult} from 'express-validator/check';
+import fs from "fs";
+import path from "path";
+import { Response, NextFunction } from "express";
+import { validationResult } from "express-validator/check";
 
-import Post from '../models/post';
-import User from '../models/user';
-import {getSocketIO} from '../socketIO';
-import { RequestWithAuthData } from '../models/auth_request';
-import HttpException from '../models/http-exception';
+import { PostModel } from "../models/post";
+import { UserModel } from "../models/user";
+import { getSocketIO } from "../socketIO";
+import { RequestWithAuthData } from "../models/auth_request";
+import HttpException from "../models/http-exception";
 
-export const getPosts = async (req: RequestWithAuthData , res : Response, next: NextFunction) => {
-  const currentPage : number = +(req.query.page || 1);
+export const getPosts = async (
+  req: RequestWithAuthData,
+  res: Response,
+  next: NextFunction
+) => {
+  const currentPage: number = +(req.query.page || 1);
   const perPage = 2;
   try {
-    const totalItems = await Post.find().countDocuments();
-    const posts = await Post.find()
+    const totalItems = await PostModel.find().countDocuments();
+    const posts = await PostModel.find()
       .populate("creator")
-      .sort({createdAt: -1})
+      .sort({ createdAt: -1 })
       .skip((currentPage - 1) * perPage)
       .limit(perPage);
 
@@ -34,10 +38,17 @@ export const getPosts = async (req: RequestWithAuthData , res : Response, next: 
   }
 };
 
-export const createPost = async (req: RequestWithAuthData , res : Response, next: NextFunction) => {
+export const createPost = async (
+  req: RequestWithAuthData,
+  res: Response,
+  next: NextFunction
+) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    const error = new HttpException(422, "Validation failed, entered data is incorrect.");
+    const error = new HttpException(
+      422,
+      "Validation failed, entered data is incorrect."
+    );
     throw error;
   }
 
@@ -50,7 +61,7 @@ export const createPost = async (req: RequestWithAuthData , res : Response, next
   const content = req.body.content;
   const imageUrl = req.file.path;
 
-  const post = new Post({
+  const post = new PostModel({
     title: title,
     content: content,
     imageUrl: imageUrl,
@@ -59,12 +70,15 @@ export const createPost = async (req: RequestWithAuthData , res : Response, next
 
   try {
     await post.save();
-    const user = await User.findById(req.userId);
+    const user = (await UserModel.findById(req.userId))!;
     user.posts.push(post);
     const savedUser = await user.save();
     getSocketIO().emit("posts", {
       action: "create",
-      post: { ...post.toObject(), creator: { _id: req.userId, name: user.name } },
+      post: {
+        ...post.toObject(),
+        creator: { _id: req.userId, name: user.name },
+      },
     });
     res.status(201).json({
       message: "Post created successfully!!",
@@ -81,9 +95,13 @@ export const createPost = async (req: RequestWithAuthData , res : Response, next
   }
 };
 
-export const getPost = async (req: RequestWithAuthData , res : Response, next: NextFunction) => {
+export const getPost = async (
+  req: RequestWithAuthData,
+  res: Response,
+  next: NextFunction
+) => {
   const postId = req.params.postId;
-  const post = await Post.findById(postId);
+  const post = await PostModel.findById(postId);
   try {
     if (!post) {
       const error = new HttpException(404, "Could not find post.");
@@ -99,11 +117,18 @@ export const getPost = async (req: RequestWithAuthData , res : Response, next: N
   }
 };
 
-export const updatePost = async (req: RequestWithAuthData , res : Response, next: NextFunction) => {
+export const updatePost = async (
+  req: RequestWithAuthData,
+  res: Response,
+  next: NextFunction
+) => {
   const postId = req.params.postId;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    const error = new HttpException(422, "Validation failed, entered data is incorrect.");
+    const error = new HttpException(
+      422,
+      "Validation failed, entered data is incorrect."
+    );
     throw error;
   }
   const title = req.body.title;
@@ -117,12 +142,12 @@ export const updatePost = async (req: RequestWithAuthData , res : Response, next
     throw error;
   }
   try {
-    const post = await Post.findById(postId).populate("creator");
+    const post = (await PostModel.findById(postId).populate("creator"))!;
     if (!post) {
       const error = new HttpException(404, "Could not find post.");
       throw error;
     }
-    if (post.creator._id.toString() !== req.userId) {
+    if (post.creator!.id.toString() !== req.userId) {
       const error = new HttpException(403, "Not authorized!");
       throw error;
     }
@@ -145,28 +170,32 @@ export const updatePost = async (req: RequestWithAuthData , res : Response, next
   }
 };
 
-export const deletePost = async (req: RequestWithAuthData , res : Response, next: NextFunction) => {
+export const deletePost = async (
+  req: RequestWithAuthData,
+  res: Response,
+  next: NextFunction
+) => {
   const postId = req.params.postId;
   try {
-    const post = await Post.findById(postId);
+    const post = (await PostModel.findById(postId))!;
 
     if (!post) {
       const error = new HttpException(404, "Could not find post.");
       throw error;
     }
-    if (post.creator.toString() !== req.userId) {
+    if (post.creator!.toString() !== req.userId) {
       const error = new HttpException(403, "Not authorized!");
       throw error;
     }
     // Check logged in user
     clearImage(post.imageUrl);
-    await Post.findByIdAndRemove(postId);
+    await PostModel.findByIdAndRemove(postId);
 
-    const user = await User.findById(req.userId);
+    const user = (await UserModel.findById(req.userId))!;
     user.posts.pull(postId);
     await user.save();
 
-    getSocketIO().emit('posts', {action: 'delete', post: postId}); 
+    getSocketIO().emit("posts", { action: "delete", post: postId });
     res.status(200).json({ message: "Deleted post." });
   } catch (e) {
     let err = e as HttpException;
@@ -177,7 +206,7 @@ export const deletePost = async (req: RequestWithAuthData , res : Response, next
   }
 };
 
-const clearImage = (filePath : string) => {
+const clearImage = (filePath: string) => {
   filePath = path.join(__dirname, "..", filePath);
   fs.unlink(filePath, (err) => console.log(err));
 };

@@ -3,8 +3,8 @@ import { validationResult } from "express-validator/check";
 import { RequestWithAuthData } from "../models/auth_request";
 import HttpException from "../models/http-exception";
 
-import Post from "../models/post";
-import User from "../models/user";
+import { PostModel } from "../models/post";
+import { UserModel } from "../models/user";
 
 export const createPost = async (
   req: RequestWithAuthData,
@@ -26,7 +26,7 @@ export const createPost = async (
   const imageUrl = req.file.path;
   const title = req.body.title;
   const content = req.body.content;
-  const post = new Post({
+  const post = new PostModel({
     title: title,
     content: content,
     imageUrl: imageUrl,
@@ -34,7 +34,7 @@ export const createPost = async (
   });
   try {
     await post.save();
-    const user = await User.findById(req.userId);
+    const user = (await UserModel.findById(req.userId))!;
     user.posts.push(post);
     await user.save();
     res.status(201).json({

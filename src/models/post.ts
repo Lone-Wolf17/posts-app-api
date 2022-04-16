@@ -1,36 +1,38 @@
-import { ObjectType, Field, ID, Int } from "type-graphql";
-import { prop as Property, getModelForClass } from "@typegoose/typegoose";
+import { ObjectType, Field, ID } from "type-graphql";
+import { prop as Property, Ref, getModelForClass } from "@typegoose/typegoose";
 
-import { Ref } from "../types";
+// import { Ref } from "../types";
 import { User } from "./user";
 
-@ObjectType({description: 'The Post model'})
+@ObjectType({ description: "The Post model" })
 export class Post {
-  @Field(() => ID)  
+  @Field(() => ID)
   id!: String;
 
   @Field()
-  @Property({required: true})
+  @Property({ required: true })
   title!: String;
 
   @Field()
-  @Property({required: true})
+  @Property({ required: true })
   imageUrl!: string;
 
   @Field()
-  @Property({required: true})
+  @Property({ required: true })
   content!: String;
 
   @Field((type) => String)
-    @Property({ref: User, required: true})
-    creator!: User;
+  @Property({ ref: User, required: true })
+  creator!: Ref<User>;
 
-    _doc:any
-    createdAt: any
-    updatedAt: any
+  _doc: any;
+  createdAt: any;
+  updatedAt: any;
 }
 
-export const PostModel = getModelForClass(Post, {schemaOptions: {timestamps: true}});
+export const PostModel = getModelForClass(Post, {
+  schemaOptions: { timestamps: true },
+});
 
 // const postSchema = new Schema(
 //   {
