@@ -13,7 +13,7 @@ import { buildSchema } from "type-graphql";
 
 import { init as initSocketIO } from "./socketIO";
 import { clearImage } from "./util/file";
-import auth from "./middleware/is-auth";
+import { isAuthGraphQL } from "./middleware/is-auth";
 import { errorHandler } from "./middleware/error.middleware";
 import { notFoundHandler } from "./middleware/not-found.middleware";
 import { RequestWithAuthData } from "./models/auth_request";
@@ -90,7 +90,8 @@ const main = async () => {
   app.use("/feed", feedRoutes);
   app.use("/auth", authRoutes);
 
-  app.use(auth);
+  /// set up GraphQL Auth middleware
+  app.use("/graphql", isAuthGraphQL);
   app.put(
     "/post-image",
     (req: RequestWithAuthData, res: Response, next: NextFunction) => {
@@ -120,38 +121,16 @@ const main = async () => {
   const apolloServer = new ApolloServer({
     schema: graphqlSchema,
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground],
-    context: (req : RequestWithAuthData) : CustomResolverContext => {
+    context: (req: RequestWithAuthData): CustomResolverContext => {
       return {
         isAuth: req.isAuth || false,
-        userId: req.userId 
+        userId: req.userId,
       };
-    }
+    },
   });
 
   await apolloServer.start();
   apolloServer.applyMiddleware({ app });
-
-  // app.use(
-  //   "/graphql",
-  //   graphqlHTTP({
-  //     schema: graphqlSchema,
-  //     rootValue: graphqlResolver,
-  //     graphiql: true,
-  //     formatError(err) {
-  //       if (!err.originalError) {
-  //         return err;
-  //       }
-
-  //       const originalError = err.originalError as HttpException;
-
-  //       const data = originalError.data;
-  //       const message = err.message || "An Error Occured";
-  //       const code = originalError.statusCode || 500;
-  //       return { message: message, status: code, data: data };
-  //     },
-  //   })
-  // );
-
   // error handlers
   app.use(errorHandler);
   app.use(notFoundHandler);

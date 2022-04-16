@@ -18,9 +18,16 @@ export const signup = async (
     throw error;
   }
   const email = req.body.email;
-  const name = req.body.name;
+  const name= req.body.name;
   const password = req.body.password;
   try {
+
+    const existingUser = await UserModel.findOne({ email: email });
+    if (existingUser) {
+      const error = new HttpException(403, "User already Exists");
+      throw error;
+    }
+
     const hashedPw = await bcrypt.hash(password, 12);
 
     const user = new UserModel({

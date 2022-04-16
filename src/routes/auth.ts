@@ -4,23 +4,23 @@ import { body } from "express-validator/check";
 
 import { UserModel } from "../models/user";
 import * as AuthController from "../controllers/auth";
-import isAuth from "../middleware/is-auth";
+import {isAuthRestAPI} from "../middleware/is-auth";
 
 const router = Router();
 
-router.put(
+router.post(
   "/signup",
   [
     body("email")
       .isEmail()
       .withMessage("Please enter a valid email.")
-      .custom((value: string, { req }: { req: Request }) => {
-        return UserModel.findOne({ email: value }).then((userDoc: any) => {
-          if (userDoc) {
-            return Promise.reject("E-Mail address already exists!");
-          }
-        });
-      })
+      // .custom((value: string, { req }: { req: Request }) => {
+      //   return UserModel.findOne({ email: value }).then((userDoc: any) => {
+      //     if (userDoc) {
+      //       return Promise.reject("E-Mail address already exists!");
+      //     }
+      //   });
+      // })
       .normalizeEmail(),
     body("password").trim().isLength({ min: 5 }),
     body("name").trim().not().isEmpty(),
@@ -30,11 +30,11 @@ router.put(
 
 router.post("/login", AuthController.login);
 
-router.get("/status", isAuth, AuthController.getUserStatus);
+router.get("/status", isAuthRestAPI, AuthController.getUserStatus);
 
 router.patch(
   "/status",
-  isAuth,
+  isAuthRestAPI,
   [body("status").trim().not().isEmpty()],
   AuthController.updateUserStatus
 );

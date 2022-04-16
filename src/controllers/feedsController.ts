@@ -1,7 +1,6 @@
-import fs from "fs";
-import path from "path";
 import { Response, NextFunction } from "express";
 import { validationResult } from "express-validator/check";
+import { clearImage } from "../util/file";
 
 import { PostModel } from "../models/post";
 import { UserModel } from "../models/user";
@@ -206,7 +205,7 @@ export const deletePost = async (
   }
 };
 
-const clearImage = (filePath: string) => {
-  filePath = path.join(__dirname, "..", filePath);
-  fs.unlink(filePath, (err) => console.log(err));
-};
+// const clearImage = (filePath: string) => {
+//   filePath = path.join(__dirname, "../..", filePath);
+//   fs.unlink(filePath, (err) => console.log(err));
+// };
