@@ -8,21 +8,22 @@ import { UserModel, User } from "../../models/user";
 import { AuthData } from "../types/auth-data";
 import { encodeToken } from "../../middleware/jwt-service.middleware";
 import { UserInput } from "../types/user-input";
+import { CustomResolverContext } from "../types/types";
 
 @Resolver((_of) => User)
 export class UserResolver {
   @Query((_returns) => User, { nullable: false })
   async user(
     @Arg("id") id: string,
-    @Ctx() req: RequestWithAuthData
+    @Ctx() context: CustomResolverContext
   ): Promise<User> {
     // return await UserModel.findById(id);
 
-    if (!req.isAuth) {
+    if (!context.isAuth) {
       const error = new HttpException(401, "Not Authenticated");
       throw error;
     }
-    const user = await UserModel.findById(req.userId);
+    const user = await UserModel.findById(context.userId);
     if (!user) {
       const error = new HttpException(404, "No User was found");
       throw error;
@@ -96,13 +97,13 @@ export class UserResolver {
   @Mutation(() => User)
   async updateStatus(
     @Arg("status") status: string,
-    @Ctx() req: RequestWithAuthData
+    @Ctx() context: CustomResolverContext
   ): Promise<User> {
-    if (!req.isAuth) {
+    if (!context.isAuth) {
       const error = new HttpException(401, "Not Authenticated");
       throw error;
     }
-    const user = await UserModel.findById(req.userId);
+    const user = await UserModel.findById(context.userId);
     if (!user) {
       const error = new HttpException(404, "No user found");
       throw error;

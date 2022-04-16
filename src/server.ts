@@ -22,6 +22,7 @@ import { UserResolver } from "./graphql/resolvers/User";
 import feedRoutes from "./routes/feed";
 import authRoutes from "./routes/auth";
 import HttpException from "./models/http-exception";
+import { CustomResolverContext } from "./graphql/types/types";
 
 dotenv.config({ path: "./config.env" }); // Load Config
 
@@ -109,15 +110,21 @@ const main = async () => {
     }
   );
 
-  const schema = await buildSchema({
+  const graphqlSchema = await buildSchema({
     resolvers: [PostResolver, UserResolver],
     emitSchemaFile: true,
     validate: false,
   });
 
   const apolloServer = new ApolloServer({
-    schema,
+    schema: graphqlSchema,
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground],
+    context: (req : RequestWithAuthData) : CustomResolverContext => {
+      return {
+        isAuth: req.isAuth || false,
+        userId: req.userId 
+      };
+    }
   });
 
   await apolloServer.start();

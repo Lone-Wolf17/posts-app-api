@@ -1,22 +1,22 @@
 import { Resolver, Mutation, Arg, Query, Ctx } from "type-graphql";
 import validator from "validator";
 
-import { RequestWithAuthData } from "../../models/auth_request";
 import HttpException from "../../models/http-exception";
 import { PostModel, Post } from "../../models/post";
 import { PostData } from "../types/post-data";
 import { PostInput } from "../types/post-input";
 import { UserModel } from "../../models/user";
 import { clearImage } from "../../util/file";
+import { CustomResolverContext } from "../types/types";
 
 @Resolver((_of) => Post)
 export class PostResolver {
   @Query((_returns) => Post, { nullable: false })
   async post(
     @Arg("id") id: string,
-    @Ctx() reqCtx: RequestWithAuthData
+    @Ctx() context: CustomResolverContext
   ): Promise<Post> {
-    if (!reqCtx.isAuth) {
+    if (!context.isAuth) {
       const error = new HttpException(401, "Not Authenticated");
       throw error;
     }
@@ -36,9 +36,9 @@ export class PostResolver {
   @Query((_returns) => PostData)
   async posts(
     @Arg("page") page: number,
-    @Ctx() reqCtx: RequestWithAuthData
+    @Ctx() context: CustomResolverContext
   ): Promise<PostData> {
-    if (!reqCtx.isAuth) {
+    if (!context.isAuth) {
       const error = new HttpException(401, "Not Authenticated");
       throw error;
     }
@@ -70,9 +70,9 @@ export class PostResolver {
   @Mutation(() => Post)
   async createPost(
     @Arg("postInput") postInput: PostInput,
-    @Ctx() req: RequestWithAuthData
+    @Ctx() context: CustomResolverContext
   ): Promise<Post> {
-    if (!req.isAuth) {
+    if (!context.isAuth) {
       const error = new HttpException(401, "Not Authenticated");
       throw error;
     }
@@ -95,7 +95,7 @@ export class PostResolver {
       throw error;
     }
 
-    const user = await UserModel.findById(req.userId);
+    const user = await UserModel.findById(context.userId);
     if (!user) {
       const error = new HttpException(401, "Invalid User.");
       throw error;
@@ -122,9 +122,9 @@ export class PostResolver {
   async updatePost(
     @Arg("id") id: string,
     @Arg("postInput") postInput: PostInput,
-    @Ctx() req: RequestWithAuthData
+    @Ctx() context: CustomResolverContext
   ): Promise<Post> {
-    if (!req.isAuth) {
+    if (!context.isAuth) {
       const error = new HttpException(401, "Not Authenticated");
       throw error;
     }
@@ -133,7 +133,7 @@ export class PostResolver {
       const error = new HttpException(404, "No post found");
       throw error;
     }
-    if (post.creator!.id.toString() !== req.userId!.toString()) {
+    if (post.creator!.id.toString() !== context.userId!.toString()) {
       const error = new HttpException(403, "Not Authorized");
       throw error;
     }
@@ -172,9 +172,9 @@ export class PostResolver {
   @Mutation(() => Boolean)
   async deletePost(
     @Arg("id") id: string,
-    @Ctx() req: RequestWithAuthData
+    @Ctx() context: CustomResolverContext
   ): Promise<boolean> {
-    if (!req.isAuth) {
+    if (!context.isAuth) {
       const error = new HttpException(401, "Not Authenticated");
       throw error;
     }
@@ -184,14 +184,14 @@ export class PostResolver {
       const error = new HttpException(404, "No post found");
       throw error;
     }
-    if (post.creator!.toString() !== req.userId!.toString()) {
+    if (post.creator!.toString() !== context.userId!.toString()) {
       const error = new HttpException(403, "Not Authorised");
       throw error;
     }
 
     clearImage(post.imageUrl);
     await PostModel.findByIdAndRemove(id);
-    const user = await UserModel.findById(req.userId);
+    const user = await UserModel.findById(context.userId);
     user!.posts.pull(id);
     await user!.save();
     return true;
