@@ -13,7 +13,7 @@ export class User {
   id!: String;
 
   @Field()
-  @Property({ required: true })
+  @Property({ required: true, type: String })
   email!: string;
 
   @Field()
@@ -29,7 +29,7 @@ export class User {
   status!: String;
 
   @Field((type) => [Post])
-  @Property({ type: () => Post, default: [] })
+  @Property({ type: Post, default: [] })
   posts!: mongoose.Types.Array<Post>;
   _doc: any;
 }

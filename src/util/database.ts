@@ -7,7 +7,6 @@ export const mongoConnect = (callback: Function) => {
     .connect(process.env.MONGO_URI!, {
       useUnifiedTopology: true,
       useNewUrlParser: true,
-      useFindAndModify: false,
     } as ConnectOptions)
     .then((client) => {
       console.log("Connected!");
