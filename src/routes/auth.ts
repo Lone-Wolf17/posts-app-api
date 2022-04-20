@@ -1,8 +1,6 @@
 import { Router } from "express";
-import { Request } from "express";
 import { body } from "express-validator/check";
 
-import { UserModel } from "../models/user";
 import * as AuthController from "../controllers/auth";
 import {isAuthRestAPI} from "../middleware/is-auth";
 

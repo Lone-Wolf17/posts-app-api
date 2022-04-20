@@ -13,7 +13,7 @@ export class User {
   id!: String;
 
   @Field()
-  @Property({ required: true, type: String })
+  @Property({ required: true, type: String, unique: true })
   email!: string;
 
   @Field()
